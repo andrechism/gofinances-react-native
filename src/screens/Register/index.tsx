@@ -45,6 +45,7 @@ const schema = Yup.object().shape({
   .number()
   .typeError('Informe um valor numérico')
   .positive('O valor não pode ser negativo ou nulo')
+  .required('O valor é obrigatório')
 })
 
 type RegisterNavigationProps = BottomTabNavigationProp<AppRoutesParamList>;
