@@ -16,7 +16,11 @@ import {
 import theme from './global/styles/theme';
 
 import { NavigationContainer } from '@react-navigation/native';
-import { AppRoutes } from './routes/app.routes';
+// import { AppRoutes } from './routes/app.routes';
+
+import { SignIn } from './screens/SignIn';
+
+import { AuthProvider } from './hooks/auth';
 
 export default function App() {
 
@@ -34,7 +38,10 @@ export default function App() {
     <ThemeProvider theme={theme}>
       <NavigationContainer>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
-        <AppRoutes />
+        {/* <AppRoutes /> */}
+        <AuthProvider>
+          <SignIn />
+        </AuthProvider>
       </NavigationContainer>
     </ThemeProvider>
   );
