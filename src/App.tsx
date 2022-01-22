@@ -15,12 +15,10 @@ import {
 
 import theme from './global/styles/theme';
 
-import { NavigationContainer } from '@react-navigation/native';
+import { Routes } from './routes';
 // import { AppRoutes } from './routes/app.routes';
 
-import { SignIn } from './screens/SignIn';
-
-import { AuthProvider } from './hooks/auth';
+import { AuthProvider, useAuth } from './hooks/auth';
 
 export default function App() {
 
@@ -30,19 +28,19 @@ export default function App() {
     Poppins_700Bold
   })
 
-  if (!fontsLoaded) {
+  const { userStorageLoading } = useAuth()
+
+  if (!fontsLoaded || userStorageLoading) {
     return <AppLoading />
   }
 
   return (
     <ThemeProvider theme={theme}>
-      <NavigationContainer>
         <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
         {/* <AppRoutes /> */}
         <AuthProvider>
-          <SignIn />
+          <Routes />
         </AuthProvider>
-      </NavigationContainer>
     </ThemeProvider>
   );
 }

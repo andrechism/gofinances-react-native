@@ -25,6 +25,7 @@ import {
   TransactionList,
   LoadContainer
 } from './styles'
+import { useAuth } from '../../hooks/auth';
 
 export interface DataListProps extends TransactionCardProps {
   id: number;
@@ -47,14 +48,23 @@ export function Dashboard() {
   const [highlightData, setHighlightData] = useState<HighlightData>({} as HighlightData);
 
   const theme = useTheme();
+  const { signOut, user } = useAuth()
 
   function getLastTransactionDate(
     collection: DataListProps[],
     type: 'positive' | 'negative'  
   ) {
 
-    const lastTransactions = Math.max.apply(Math, collection
-      .filter((transaction) => transaction.type === type)
+    const filteredTransaction = collection.filter((transaction) => transaction.type === type)
+    console.log('filteredTransaction', filteredTransaction)
+
+    if(filteredTransaction.length === 0) {
+      return 0
+    }
+
+    const lastTransactions = Math.max.apply(
+      Math,
+      filteredTransaction
       .map((transaction) => new Date(transaction.date).getTime()));
 
     const formattedLastTransactions = Intl.DateTimeFormat('pt-BR', {
@@ -66,7 +76,7 @@ export function Dashboard() {
   }
 
   async function loadTransactions() {
-    const dataKey = '@gofinances:transactions';
+    const dataKey = `@gofinances:transactions_user:${user.id}`;
     const response = await AsyncStorage.getItem(dataKey);
 
     const transactions = !!response ? JSON.parse(response) : [];
@@ -104,12 +114,21 @@ export function Dashboard() {
       }
 
     });
-
+    
+    
     setTransactions(formattedTransactions);
 
-    const lastTransactionsEntries = getLastTransactionDate(transactions, 'positive');
-    const lastTransactionsExpenses = getLastTransactionDate(transactions, 'negative');
-    const totalInterval = `01 a ${lastTransactionsExpenses}`;
+    if (!formattedTransactions.length) {
+      setIsLoading(false)
+    }
+
+    const lastTransactionsEntries = transactions.length ? getLastTransactionDate(transactions, 'positive') : null;
+    const lastTransactionsExpenses = transactions.length ? getLastTransactionDate(transactions, 'negative') : null;
+
+
+    const totalInterval = lastTransactionsExpenses === 0
+    ? 'Não há transações'
+    : `01 a ${lastTransactionsExpenses}`;
 
     const total = entriesTotal - expensesTotal;
 
@@ -119,14 +138,18 @@ export function Dashboard() {
           style: 'currency',
           currency: 'BRL'
         }),
-        lastTransaction: `Última entrada dia ${lastTransactionsEntries}`
+        lastTransaction: lastTransactionsEntries === 0 
+        ? 'Não há transações' 
+        : `Última entrada dia ${lastTransactionsEntries}`
       },
       expenses: {
         amount: expensesTotal.toLocaleString('pt-BR', {
           style: 'currency',
           currency: 'BRL'
         }),
-        lastTransaction: `Última saída dia ${lastTransactionsExpenses}`
+        lastTransaction: lastTransactionsExpenses === 0 
+        ? 'Não há transações' 
+        : `Última saída dia ${lastTransactionsExpenses}`
       },
       total: {
         amount: total.toLocaleString('pt-BR', {
@@ -142,11 +165,11 @@ export function Dashboard() {
   }
 
   useEffect(() => {
-    loadTransactions();
+    loadTransactions()
   }, [])
 
   useFocusEffect(useCallback(() => {
-    loadTransactions();
+    loadTransactions()
   }, []))
 
   return (
@@ -166,37 +189,44 @@ export function Dashboard() {
             <Header>
               <UserWrapper>
                 <UserInfo>
-                  <Photo source={{ uri: 'https://avatars.githubusercontent.com/u/57547336?v=4' }} />
+                  <Photo
+                    source={{ uri: user.photo }}
+                  />
                   <User>
                     <UserGreeting>Olá, </UserGreeting>
-                    <UserName>André</UserName>
+                    <UserName>{user.name}</UserName>
                   </User>
                 </UserInfo>
-                <LogoutButton onPress={() => {}}>
+                <LogoutButton onPress={signOut}>
                   <Icon name="power" />
                 </LogoutButton>
               </UserWrapper>
             </Header>
-            <HighLightCards>
-              <HighLightCard
-                type="up"
-                title="Entradas"
-                amount={highlightData.entries.amount}
-                lastTransaction={highlightData.entries.lastTransaction}
-              />
-              <HighLightCard
-                type="down"
-                title="Saídas"
-                amount={highlightData.expenses.amount}
-                lastTransaction={highlightData.expenses.lastTransaction}
-              />
-              <HighLightCard
-                type="total"
-                title="Total"
-                amount={highlightData.total.amount}
-                lastTransaction={highlightData.total.lastTransaction}
-              />
-            </HighLightCards>
+              {
+                transactions.length > 1 && (
+                  <HighLightCards>
+                    <HighLightCard
+                      type="up"
+                      title="Entradas"
+                      amount={highlightData.entries.amount}
+                      lastTransaction={highlightData.entries.lastTransaction}
+                    />
+                    <HighLightCard
+                      type="down"
+                      title="Saídas"
+                      amount={highlightData.expenses.amount}
+                      lastTransaction={highlightData.expenses.lastTransaction}
+                    />
+                    <HighLightCard
+                      type="total"
+                      title="Total"
+                      amount={highlightData.total.amount}
+                      lastTransaction={highlightData.total.lastTransaction}
+                    />
+                  </HighLightCards>
+                )
+              }
+              
 
             <Transactions>
               <Title>Listagem</Title>
